@@ -3,8 +3,12 @@ import cors from "cors";
 import dotenv from 'dotenv'
 import { userRouter } from "./routes/user.route";
 import handleConnectionToMongoDB from './connection';
+import cookieParser from 'cookie-parser'
 
 const app = express();
+
+app.use(cookieParser());
+
 //local routes config
 dotenv.config({ path: "./.env.local" });
 

@@ -14,15 +14,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim: true
+      trim: true,
     },
     password: {
       type: String,
       required: true,
     },
+    bio: {
+      type: String,
+    },
+    refreshToken: {
+      type: String,
+    },
   },
   {
-      timestamps: true,
+    timestamps: true,
   }
 );
 
