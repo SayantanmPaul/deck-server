@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import UserModel from "../models/user.model";
 
-// generate an access token for the user 
+// generate an access token for the user
 export const generateAccessToken = (_id: string) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET as string, {
     expiresIn: "6m",
@@ -101,7 +101,7 @@ export const handleUserSignIn = async (
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    //generate an access token and an refresh token for the user once the user is authenticated for email and password 
+    //generate an access token and an refresh token for the user once the user is authenticated for email and password
     // and share with the database and the clint within cookies
     const authToken = generateAccessToken(user._id.toString());
 
@@ -125,15 +125,17 @@ export const handleUserSignIn = async (
 
     res.cookie("accessToken", authToken, cookieOptions);
     res.cookie("refreshToken", user.refreshToken, cookieOptions);
-    
+
     //also send the user details and the tokens to the client
     return res.status(200).json({
       message: `Welcome ${user.firstName}`,
       user: {
+        _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         bio: user.bio,
+        avatar: user.avatar,
       },
       accessToken: authToken,
       refreshToken: refreshToken,
@@ -169,7 +171,7 @@ export const handleUserLogout = async (
       sameSite: "none" as "none",
     };
 
-    //clear the cookies 
+    //clear the cookies
     if (!user) {
       res.clearCookie("accessToken", { ...cookieOptions });
       res.clearCookie("refreshToken", { ...cookieOptions });
@@ -183,6 +185,33 @@ export const handleUserLogout = async (
 
     return res.status(200).json({
       message: "user logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCurrentUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.body.user;
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(200).json({
+      message: "User fetched successfully",
+      user: {
+        _id: user?._id,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        email: user?.email,
+        bio: user?.bio,
+        avatar: user?.avatar,
+      },
     });
   } catch (error) {
     next(error);

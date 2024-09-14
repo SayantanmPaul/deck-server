@@ -36,7 +36,6 @@ export const authenticateToken = async (
         
         //attach the user to the request body for later use in the request cycle
         req.body.user = user;
-
         next();
       }
     );
