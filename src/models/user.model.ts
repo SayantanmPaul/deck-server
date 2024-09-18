@@ -56,6 +56,24 @@ const userSchema = new mongoose.Schema(
         }`;
       },
     },
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+      },
+    ],
+    incomingFriendRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+      },
+    ],
+    sentFriendRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+      },
+    ],
   },
   {
     timestamps: true,

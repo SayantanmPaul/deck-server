@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
-import UserModel from "../src/models/user.model";
+import UserModel from "../models/user.model";
+import { redis } from "../lib/redis";
 
 //Middleware to authenticate JWT token
 export const authenticateToken = async (
@@ -28,14 +29,22 @@ export const authenticateToken = async (
           return res.status(403).json({ error: "Invalid or expired token" });
         }
 
-        const user = await UserModel.findById((decoded as JwtPayload)._id);
+        const { _id } = decoded as jwt.JwtPayload;
 
-        if (!user) {
-          return res.status(401).json({ error: "Invalid or expired token" });
-        }
+        const cachedUser = await redis.get(`userId:${_id}`);
         
-        //attach the user to the request body for later use in the request cycle
-        req.body.user = user;
+        if (cachedUser) {
+          req.body.user = JSON.parse(cachedUser);
+        } else {
+          const user = await UserModel.findById(_id).select("-password");
+  
+          if (!user) {
+            return res.status(401).json({ error: "Invalid or expired token" });
+          }
+          //attach the user to the request body for later use in the request cycle
+          req.body.user = user;
+        }
+
         next();
       }
     );
