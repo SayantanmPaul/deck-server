@@ -112,7 +112,7 @@ export const handleUserSignIn = async (
 
     let user;
     const cachedUser = await redis.get(`userId:${email}`);
-
+  
     if (cachedUser) {
       user = JSON.parse(cachedUser);
     } else {
@@ -142,9 +142,10 @@ export const handleUserSignIn = async (
         expiresIn: "7d",
       }
     );
-
-    user.refreshToken = refreshToken;
-    await user.save();
+    const mongoUser = UserModel.hydrate(user);
+    
+    mongoUser.refreshToken = refreshToken;
+    await mongoUser.save();
 
     const cookieOptions = {
       httpOnly: true,
