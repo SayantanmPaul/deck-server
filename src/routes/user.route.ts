@@ -7,7 +7,7 @@ import {
   handleUserSignUp,
 } from "../controller/user.controller";
 import { authenticateToken } from "../middlewares/authenticate.middleware";
-import { handleAddNewFriend } from "../controller/friendreq.controller";
+import { acceptIncomingFriendRequest, declineIncomingFriendRequest, getIncomingFriendRequestUsers, handleSendFriendRequest } from "../controller/friendreq.controller";
 
 export const userRouter = express.Router();
 
@@ -21,6 +21,13 @@ userRouter.post("/user/logout", authenticateToken, handleUserLogout);
 
 userRouter.get("/user", authenticateToken, getCurrentUser);
 
-userRouter.post("/user/add-friend", authenticateToken, handleAddNewFriend);
+userRouter.post("/user/add-friend", authenticateToken, handleSendFriendRequest);
+
+userRouter.get("/user/friend-requests", authenticateToken, getIncomingFriendRequestUsers);
+
+userRouter.post("/user/friend-requests/accept", authenticateToken, acceptIncomingFriendRequest);
+
+userRouter.post("/user/friend-requests/decline", authenticateToken, declineIncomingFriendRequest);
+
 
 // userRouter.get('/', )

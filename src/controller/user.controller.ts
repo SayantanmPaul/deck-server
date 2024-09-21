@@ -258,10 +258,13 @@ export const getCurrentUser = async (
         email: user?.email,
         bio: user?.bio,
         avatar: user?.avatar,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+        incomingFriendRequests: user?.incomingFriendRequests,
+        sentFriendRequests: user?.sentFriendRequests,
       },
     });
   } catch (error) {
     next(error);
   }
 };
-
