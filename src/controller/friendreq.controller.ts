@@ -39,41 +39,42 @@ export const handleSendFriendRequest = async (
     const idToAdd = newFriendUser._id.toString();
 
     //3. check if the user is same as the logged in user
-    if (idToAdd === currentUserId) {
+    if (idToAdd === currentUserId.toString()) {
       return res.status(400).json({ error: "you can't add yourself" });
     }
 
     //4. check for already sent friend request in both redis and mongodb
-    const isAlreadyAdded = await fetchRedis(
-      "sismember",
+    const isAlreadyAdded = (await redis.sismember(
       `userId:${idToAdd}:incoming_friend_requests`,
       currentUserId
-    );
+    )) as 0 | 1;
 
     const isRequestInMongoDB = await UserModel.findOne({
       _id: idToAdd,
       incomingFriendRequests: currentUserId,
     });
 
-    if (isAlreadyAdded?.result || isRequestInMongoDB) {
+    if (isAlreadyAdded || isRequestInMongoDB) {
       return res
         .status(400)
         .json({ error: "you have already sent a friend request previously" });
     }
 
     //5. check for already been friends in redis and mongodb
-    const isAlreadyFriends = await fetchRedis(
-      "sismember",
+    const isAlreadyFriends = (await redis.sismember(
       `userId:${currentUserId}:friends`,
       idToAdd
-    );
+    )) as 0 | 1;
 
-    const isFriendInMongoDB = await UserModel.findOne({
-      _id: currentUserId,
-      friends: idToAdd,
-    });
-
-    if (isAlreadyFriends?.result || isFriendInMongoDB) {
+    const isFriendInMongoDB: number =
+      (await UserModel.countDocuments({
+        _id: currentUserId,
+        friends: idToAdd,
+      })) > 0
+        ? 1
+        : 0;
+    
+    if (isAlreadyFriends || isFriendInMongoDB) {
       return res.status(400).json({ error: "You are already friends" });
     }
 
@@ -206,7 +207,7 @@ export const acceptIncomingFriendRequest = async (
       $push: { friends: currentUserId },
     });
 
-    return res.status(200).json({message: `friend request accepted`});
+    return res.status(200).json({ message: `friend request accepted` });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(422).json({ error: error.message });
