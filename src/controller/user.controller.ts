@@ -1,10 +1,11 @@
 import bcrypt from "bcrypt";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import UserModel from "../models/user.model";
+import UserModel, { RANDOM_NAME_LIST } from "../models/user.model";
 import { redis } from "../lib/redis";
 import { LoginInFormSchema, SignUpFormSchema } from "../schema/validations";
 import { z } from "zod";
+import { generateUsername } from 'unique-username-generator'
 
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
@@ -66,11 +67,15 @@ export const handleUserSignUp = async (
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    //generate a unique username while creating the user
+    let uniqueUsername = generateUsername('', 0, 12);
+
     const newUser = await UserModel.create({
       firstName,
       lastName,
       email,
       password: hashedPassword,
+      userName: uniqueUsername,
     });
 
     const user = {
@@ -80,13 +85,14 @@ export const handleUserSignUp = async (
       email: newUser.email,
       bio: newUser.bio,
       avatar: newUser.avatar,
+      userName: newUser.userName,
       password: newUser.password,
       refreshToken: newUser.refreshToken,
     };
 
     await redis.set(`userId:${newUser._id}`, JSON.stringify(user));
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "User created successfully",
       user: user,
     });
@@ -143,7 +149,7 @@ export const handleUserSignIn = async (
       }
     );
     const mongoUser = UserModel.hydrate(user);
-    
+
     mongoUser.refreshToken = refreshToken;
     await mongoUser.save();
 
@@ -167,6 +173,7 @@ export const handleUserSignIn = async (
         email: user.email,
         bio: user.bio,
         avatar: user.avatar,
+        userName: user.userName
       },
       accessToken: authToken,
       refreshToken: refreshToken,
@@ -258,8 +265,10 @@ export const getCurrentUser = async (
         email: user?.email,
         bio: user?.bio,
         avatar: user?.avatar,
+        userName: user?.userName,
         createdAt: user?.createdAt,
         updatedAt: user?.updatedAt,
+        friends: user?.friends,
         incomingFriendRequests: user?.incomingFriendRequests,
         sentFriendRequests: user?.sentFriendRequests,
       },

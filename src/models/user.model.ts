@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const RANDOM_NAME_LIST = [
+export const RANDOM_NAME_LIST = [
   "Princess",
   "Charlie",
   "Ginger",
@@ -55,6 +55,11 @@ const userSchema = new mongoose.Schema(
           RANDOM_NAME_LIST[Math.floor(Math.random() * RANDOM_NAME_LIST.length)]
         }`;
       },
+    },
+    userName: {
+      type: String,
+      unique: true,
+      trim: true,
     },
     friends: [
       {
