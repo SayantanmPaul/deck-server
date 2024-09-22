@@ -7,7 +7,14 @@ import {
   handleUserSignUp,
 } from "../controller/user.controller";
 import { authenticateToken } from "../middlewares/authenticate.middleware";
-import { acceptIncomingFriendRequest, declineIncomingFriendRequest, getIncomingFriendRequestUsers, handleSendFriendRequest } from "../controller/friendreq.controller";
+import {
+  acceptIncomingFriendRequest,
+  declineIncomingFriendRequest,
+  getFriendsByUserId,
+  getIncomingFriendRequestUsers,
+  handleSendFriendRequest,
+} from "../controller/friendreq.controller";
+import { getConversationFriendInfo } from "../controller/conversations.controller";
 
 export const userRouter = express.Router();
 
@@ -23,11 +30,26 @@ userRouter.get("/user", authenticateToken, getCurrentUser);
 
 userRouter.post("/user/add-friend", authenticateToken, handleSendFriendRequest);
 
-userRouter.get("/user/friend-requests", authenticateToken, getIncomingFriendRequestUsers);
+userRouter.get(
+  "/user/friend-requests",
+  authenticateToken,
+  getIncomingFriendRequestUsers
+);
 
-userRouter.post("/user/friend-requests/accept", authenticateToken, acceptIncomingFriendRequest);
+userRouter.post(
+  "/user/friend-requests/accept",
+  authenticateToken,
+  acceptIncomingFriendRequest
+);
 
-userRouter.post("/user/friend-requests/decline", authenticateToken, declineIncomingFriendRequest);
+userRouter.post(
+  "/user/friend-requests/decline",
+  authenticateToken,
+  declineIncomingFriendRequest
+);
 
+userRouter.get("/user/friends", authenticateToken, getFriendsByUserId);
+
+userRouter.get("/user/conversation/partnerDetails", authenticateToken, getConversationFriendInfo);
 
 // userRouter.get('/', )

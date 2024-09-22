@@ -1,8 +1,7 @@
 import { NextFunction, Request, Response } from "express";
+import { z } from "zod";
 import { redis } from "../lib/redis";
 import UserModel from "../models/user.model";
-import { fetchRedis } from "../lib/helper";
-import { string, z } from "zod";
 
 export const handleSendFriendRequest = async (
   req: Request,
@@ -73,7 +72,7 @@ export const handleSendFriendRequest = async (
       })) > 0
         ? 1
         : 0;
-    
+
     if (isAlreadyFriends || isFriendInMongoDB) {
       return res.status(400).json({ error: "You are already friends" });
     }
@@ -243,6 +242,42 @@ export const declineIncomingFriendRequest = async (
     if (error instanceof z.ZodError) {
       return res.status(422).json({ error: error.message });
     }
+    next(error);
+  }
+};
+
+//retriving friends for current user
+export const getFriendsByUserId = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userFriendsFromMongo = await UserModel.findById(req.body.user._id)
+      .select("friends")
+      .lean();
+
+    const friendsIds = userFriendsFromMongo?.friends || [];
+
+    if (friendsIds.length === 0) {
+      return res.status(200).json({ message: "no incoming friend requests" });
+    }
+
+    const allFriends = await Promise.all(
+      friendsIds?.map(async (friendId) => {
+        const user = await UserModel.findById(friendId)
+          .select("firstName lastName email avatar _id")
+          .lean();
+        return user;
+      })
+    ) || [];
+
+    return res.status(200).json({
+      message: "available friends of the user fetched successfully",
+      friends: allFriends,
+    });
+
+  } catch (error) {
     next(error);
   }
 };

@@ -15,3 +15,14 @@ export const LoginInFormSchema = z.object({
 export const AddNewFriendSchema = z.object({
   email: z.string().email(),
 });
+
+export const MessageSchema = z.object({
+  _id: z.string(),
+  senderId: z.string(),
+  text: z.string(),
+  timeStamp: z.number(),
+});
+
+export const MessageArraySchema = z.array(MessageSchema);
+
+export type Message = z.infer<typeof MessageArraySchema>;
