@@ -14,7 +14,11 @@ import {
   getIncomingFriendRequestUsers,
   handleSendFriendRequest,
 } from "../controller/friendreq.controller";
-import { getConversationFriendInfo } from "../controller/conversations.controller";
+import {
+  getConversationFriendInfo,
+  getConversationsMessages,
+  sendMessageToPartner,
+} from "../controller/conversations.controller";
 
 export const userRouter = express.Router();
 
@@ -50,6 +54,21 @@ userRouter.post(
 
 userRouter.get("/user/friends", authenticateToken, getFriendsByUserId);
 
-userRouter.get("/user/conversation/partnerDetails", authenticateToken, getConversationFriendInfo);
+userRouter.get(
+  "/user/conversation/partnerDetails",
+  authenticateToken,
+  getConversationFriendInfo
+);
 
+userRouter.post(
+  "/user/conversation/send",
+  authenticateToken,
+  sendMessageToPartner
+);
+
+userRouter.get(
+  "/user/conversation/messages",
+  authenticateToken,
+  getConversationsMessages
+);
 // userRouter.get('/', )
