@@ -7,17 +7,18 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-const isProductionMode = false;
+const isProductionMode = process.env.NODE_ENV === "production";
+
 const PORT = process.env.PORT || 5001;
 
 app.use(cookieParser());
 
 //local routes config
-dotenv.config({ path: "./.env.local" });
+dotenv.config({ path: isProductionMode ? "./.env" : "./.env.local" });
 
 //connection to mogno databse
 handleConnectionToMongoDB(process.env.DB_URL as string)
-  .then(() => console.log("Connected to databse"))
+  .then(() => console.log("Connected to database", isProductionMode))
   .catch((error) => console.error(error));
 
 //setup cors
