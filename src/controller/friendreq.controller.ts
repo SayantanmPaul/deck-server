@@ -3,6 +3,7 @@ import { z } from "zod";
 import { redis } from "../lib/redis";
 import UserModel from "../models/user.model";
 import ConversationModel from "../models/conversation.model";
+import { pusherServer, toPusherKey } from "../lib/pusher";
 
 export const handleSendFriendRequest = async (
   req: Request,
@@ -77,6 +78,19 @@ export const handleSendFriendRequest = async (
     if (isAlreadyFriends || isFriendInMongoDB) {
       return res.status(400).json({ error: "You are already friends" });
     }
+
+    pusherServer.trigger(
+      toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+      "incoming_friend_requests",
+      {
+        _id: currentUserId,
+        firstName: req.body.user.firstName,
+        lastName: req.body.user.lastName,
+        email: req.body.user.email,
+        avatar: req.body.user.avatar,
+      }
+    );
+    console.log(`Pusher event triggered for ${idToAdd}`);
 
     //6. If all checks pass, send friend request in redis
     redis.sadd(`userId:${idToAdd}:incoming_friend_requests`, currentUserId);
@@ -189,28 +203,45 @@ export const acceptIncomingFriendRequest = async (
       return res.sendStatus(400);
     }
 
-    await redis.sadd(`userId:${currentUserId}:friends`, senderId);
+    const [userRaw, friendsRaw] = (await Promise.all([
+      redis.get(`userId:${currentUserId}`),
+      redis.get(`userId:${senderId}`),
+    ])) as [string, string];
 
-    await redis.sadd(`userId:${senderId}:friends`, currentUserId);
+    const user = JSON.parse(userRaw);
+    const friend = JSON.parse(friendsRaw);
 
-    await redis.srem(
-      `userId:${currentUserId}:incoming_friend_requests`,
-      senderId
-    );
+    await Promise.all([
+      pusherServer.trigger(
+        toPusherKey(`user:${senderId}:friends`),
+        "new_friend",
+        user
+      ),
+      pusherServer.trigger(
+        toPusherKey(`user:${currentUserId}:friends`),
+        "new_friend",
+        friend
+      ),
+      redis.sadd(`userId:${currentUserId}:friends`, senderId),
 
-    await UserModel.findByIdAndUpdate(currentUserId, {
-      $push: { friends: senderId },
-      $pull: { incomingFriendRequests: senderId },
-    });
+      redis.sadd(`userId:${senderId}:friends`, currentUserId),
 
-    await UserModel.findByIdAndUpdate(senderId, {
-      $push: { friends: currentUserId },
-    });
+      redis.srem(`userId:${currentUserId}:incoming_friend_requests`, senderId),
 
-    const conversation= new ConversationModel({
+      UserModel.findByIdAndUpdate(currentUserId, {
+        $push: { friends: senderId },
+        $pull: { incomingFriendRequests: senderId },
+      }),
+
+      UserModel.findByIdAndUpdate(senderId, {
+        $push: { friends: currentUserId },
+      }),
+    ]);
+
+    const conversation = new ConversationModel({
       participates: [currentUserId, senderId],
       timestamp: new Date(),
-    })
+    });
 
     await conversation.save();
 
@@ -236,14 +267,18 @@ export const declineIncomingFriendRequest = async (
       .object({ senderId: z.string() })
       .parse(body);
 
-    await redis.srem(
-      `userId:${currentUserId}:incoming_friend_requests`,
-      IdToDeny
-    );
+    await Promise.all([
+      pusherServer.trigger(
+        toPusherKey(`user:${currentUserId}:friends`),
+        "friend_decline",
+        { senderId: IdToDeny }
+      ),
+      redis.srem(`userId:${currentUserId}:incoming_friend_requests`, IdToDeny),
 
-    await UserModel.findByIdAndUpdate(currentUserId, {
-      $pull: { incomingFriendRequests: IdToDeny },
-    });
+      UserModel.findByIdAndUpdate(currentUserId, {
+        $pull: { incomingFriendRequests: IdToDeny },
+      }),
+    ]);
 
     return res.status(200).send("friend request removed");
   } catch (error) {
@@ -271,20 +306,20 @@ export const getFriendsByUserId = async (
       return res.status(200).json({ message: "no incoming friend requests" });
     }
 
-    const allFriends = await Promise.all(
-      friendsIds?.map(async (friendId) => {
-        const user = await UserModel.findById(friendId)
-          .select("firstName lastName email avatar _id")
-          .lean();
-        return user;
-      })
-    ) || [];
+    const allFriends =
+      (await Promise.all(
+        friendsIds?.map(async (friendId) => {
+          const user = await UserModel.findById(friendId)
+            .select("firstName lastName email avatar _id")
+            .lean();
+          return user;
+        })
+      )) || [];
 
     return res.status(200).json({
       message: "available friends of the user fetched successfully",
       friends: allFriends,
     });
-
   } catch (error) {
     next(error);
   }

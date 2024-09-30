@@ -1,11 +1,14 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import dotenv from 'dotenv'
+import dotenv from "dotenv";
 import { userRouter } from "./routes/user.route";
-import handleConnectionToMongoDB from './connection';
-import cookieParser from 'cookie-parser'
+import handleConnectionToMongoDB from "./connection";
+import cookieParser from "cookie-parser";
 
 const app = express();
+
+const isProductionMode = false;
+const PORT = process.env.PORT || 5001;
 
 app.use(cookieParser());
 
@@ -20,7 +23,9 @@ handleConnectionToMongoDB(process.env.DB_URL as string)
 //setup cors
 app.use(
   cors({
-    origin: process.env.ORIGIN_PATH,
+    origin: isProductionMode
+      ? process.env.ORIGIN_PATH
+      : "http://localhost:3000",
     credentials: true,
   })
 );
@@ -30,7 +35,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", userRouter);
 
-
-app.listen(process.env.PORT, () => {
-  console.log(`Server is running on port ${process.env.PORT}`);
-})
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

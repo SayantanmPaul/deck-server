@@ -2,10 +2,15 @@ import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { redis } from "../lib/redis";
 import UserModel from "../models/user.model";
-import { Message, MessageArraySchema, MessageSchema } from "../schema/validations";
+import {
+  Message,
+  MessageArraySchema,
+  MessageSchema,
+} from "../schema/validations";
 import ConversationModel from "../models/conversation.model";
 import MessageModel from "../models/messsage.model";
 import { nanoid } from "nanoid";
+import { pusherServer, toPusherKey } from "../lib/pusher";
 
 export const getConversationsMessages = async (
   req: Request,
@@ -24,13 +29,12 @@ export const getConversationsMessages = async (
       -1
     );
 
-    const dbMessages = results.map((message) => JSON.parse(message) as Message)
+    const dbMessages = results.map((message) => JSON.parse(message) as Message);
 
     const reserverdedDBMessages = dbMessages.reverse();
 
     const messages = MessageArraySchema.parse(reserverdedDBMessages);
     return res.status(200).json({ messages });
-    
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(422).json({ error: error.message });
@@ -128,6 +132,26 @@ export const sendMessageToPartner = async (
     };
 
     const message = MessageSchema.parse(messageData);
+
+    // console.log("pusher 1");
+    
+    //notift all connected chat room clients
+    const channel = toPusherKey(`conversation:${conversationId}`);
+    await pusherServer.trigger(channel, "incoming_message", message);
+
+    await pusherServer.trigger(
+      toPusherKey(`user:${frindId}:conversations`),
+      "new_message",
+      {
+        ...message,
+        senderAvatar: parsedSender.avatar,
+        senderFirstName: parsedSender.firstName,
+        senderLastName: parsedSender.lastName,
+        senderUserName: parsedSender.userName,
+      }
+    );
+
+    // console.log("pusher 2");
 
     //5. store the message in sorted set
     await redis.zadd(

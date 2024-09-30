@@ -4,8 +4,8 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node ./src/index.ts",
-    "start:prod": "npm run build && node ./dist/index.js",
+    "start": "ts-node ./src/app.ts",
+    "start:prod": "npm run build && node ./dist/app.js",
     "start:nodemon": "./node_modules/nodemon/bin/nodemon.js",
     "build": "npx tsc"
   },
@@ -23,6 +23,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.1",
     "nanoid": "^3.3.7",
+    "pusher": "^5.2.0",
     "socket.io": "^4.7.5",
     "unique-username-generator": "^1.3.0",
     "zod": "^3.23.8"

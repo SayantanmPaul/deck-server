@@ -10,12 +10,12 @@ import { generateUsername } from 'unique-username-generator'
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET as string, {
-    expiresIn: "6m",
+    expiresIn: "1h",
   });
 };
 
 export const handleRefreshToken = (req: Request, res: Response) => {
-  const { refreshToken } = req.cookies;
+  const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken)
     return res.sendStatus(401).json({ error: "Refresh token not found" });
