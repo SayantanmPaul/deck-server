@@ -73,6 +73,11 @@ export const authenticateToken = async (
               const newAccessToken = generateAccessToken(_id);
               res.cookie("accessToken", newAccessToken, cookieOptions);
 
+              res.setHeader(
+                "Set-Cookie",
+                `accessToken=${newAccessToken}; Max-Age=${cookieOptions.maxAge}; Path=${cookieOptions.path}; SameSite=${cookieOptions.sameSite}`
+              );
+
               req.body.user = user;
               return next();
             }

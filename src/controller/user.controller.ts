@@ -169,16 +169,12 @@ export const handleUserSignIn = async (
       ...cookieOptions,
     });
 
-    res.cookie("accessToken", authToken, {
-      httpOnly: false,
-      secure: false,
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("lax" as const),
-      path: "/",
-      maxAge: 8 * 24 * 60 * 60 * 1000,
-    });
+    res.setHeader(
+      "Set-Cookie",
+      `accessToken=${authToken}; Max-Age=${8 * 24 * 60 * 60 * 1000}; Path=${
+        cookieOptions.path
+      }; SameSite=${cookieOptions.sameSite}`
+    );
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
