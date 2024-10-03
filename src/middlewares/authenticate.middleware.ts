@@ -60,16 +60,18 @@ export const authenticateToken = async (
               dotenv.config({ path: "./.env" });
 
               const cookieOptions = {
-                secure: false,
+                httpOnly: true,
+                secure: true,
                 maxAge: 8 * 24 * 60 * 60 * 1000,
                 sameSite:
                   process.env.NODE_ENV === "production"
-                    ? ("none" as "none")
-                    : ("lax" as "lax"),
+                    ? ("none" as const)
+                    : ("lax" as const),
+                path: "/",
               };
 
               const newAccessToken = generateAccessToken(_id);
-              res.cookie("accessToken", newAccessToken);
+              res.cookie("accessToken", newAccessToken, cookieOptions);
 
               req.body.user = user;
               return next();

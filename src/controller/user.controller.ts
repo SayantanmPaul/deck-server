@@ -5,9 +5,8 @@ import UserModel, { RANDOM_NAME_LIST } from "../models/user.model";
 import { redis } from "../lib/redis";
 import { LoginInFormSchema, SignUpFormSchema } from "../schema/validations";
 import { z } from "zod";
-import { generateUsername } from 'unique-username-generator'
-import dotenv from 'dotenv';
-import path from "path";
+import { generateUsername } from "unique-username-generator";
+import dotenv from "dotenv";
 
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
@@ -70,7 +69,7 @@ export const handleUserSignUp = async (
     const hashedPassword = await bcrypt.hash(password, 10);
 
     //generate a unique username while creating the user
-    let uniqueUsername = generateUsername('', 0, 12);
+    let uniqueUsername = generateUsername("", 0, 12);
 
     const newUser = await UserModel.create({
       firstName,
@@ -119,7 +118,7 @@ export const handleUserSignIn = async (
 
     let user;
     const cachedUser = await redis.get(`userId:${email}`);
-  
+
     if (cachedUser) {
       user = JSON.parse(cachedUser);
     } else {
@@ -157,20 +156,20 @@ export const handleUserSignIn = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      // secure: process.env.NODE_ENV === "production",
-      maxAge: 8 * 24 * 60 * 60 * 1000,
-      sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? ("none" as const)
+          : ("lax" as const),
+      path: "/",
     };
 
     res.cookie("refreshToken", user.refreshToken, {
-      httpOnly: true,
-      secure: true,
       ...cookieOptions,
+      maxAge: 8 * 24 * 60 * 60 * 1000,
     });
-    res.cookie("accessToken", authToken, {
-      secure: false,
-      ...cookieOptions,
-    });
+    res.cookie("accessToken", authToken, cookieOptions);
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
@@ -225,22 +224,22 @@ export const handleUserLogout = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      // secure: process.env.NODE_ENV === "production",
-      maxAge: 8 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite:
         process.env.NODE_ENV === "production"
-          ? ("none" as "none")
-          : ("lax" as "lax"),
+          ? ("none" as const)
+          : ("lax" as const),
+      path: "/",
     };
 
     //clear the cookies
     if (!user) {
-      res.clearCookie("accessToken", { ...cookieOptions, secure: false });
-      res.clearCookie("refreshToken", {
+      res.clearCookie("accessToken", {
         ...cookieOptions,
-        httpOnly: true,
-        secure: true,
+        maxAge: 8 * 24 * 60 * 60 * 1000,
       });
+      res.clearCookie("refreshToken", cookieOptions);
       return res.sendStatus(204);
     }
 
