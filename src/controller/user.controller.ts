@@ -157,15 +157,20 @@ export const handleUserSignIn = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
       path: '/'
     };
 
-    res.cookie("refreshToken", user.refreshToken, cookieOptions);
-    res.cookie("accessToken", authToken, cookieOptions);
+    res.cookie("refreshToken", user.refreshToken, {
+      httpOnly: true,
+      ...cookieOptions
+    });
+    res.cookie("accessToken", authToken, {
+      httpOnly: false,
+      ...cookieOptions,
+    });
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
