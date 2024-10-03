@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-const isProductionMode = process.env.NODE_ENV === "production";
+const isProductionMode = true;
 
 const PORT = process.env.PORT || 5001;
 
