@@ -171,7 +171,7 @@ export const handleUserSignIn = async (
 
     res.cookie("accessToken", authToken, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite:
         process.env.NODE_ENV === "production"
           ? ("none" as const)

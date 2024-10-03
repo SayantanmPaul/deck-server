@@ -61,7 +61,7 @@ export const authenticateToken = async (
 
               const cookieOptions = {
                 httpOnly: false,
-                secure: true,
+                secure: false,
                 maxAge: 8 * 24 * 60 * 60 * 1000,
                 sameSite:
                   process.env.NODE_ENV === "production"
