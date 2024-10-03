@@ -8,6 +8,8 @@ import { z } from "zod";
 import { generateUsername } from "unique-username-generator";
 import dotenv from "dotenv";
 
+dotenv.config({ path: "./.env" });
+
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET as string, {
@@ -153,15 +155,12 @@ export const handleUserSignIn = async (
     mongoUser.refreshToken = refreshToken;
     await mongoUser.save();
 
-    dotenv.config({ path: "./.env" });
+    const isProduction = process.env.NODE_ENV === "production";
 
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("lax" as const),
+      secure: isProduction,
+      sameSite: isProduction ? ("none" as const) : ("lax" as const),
       path: "/",
     };
 
@@ -169,12 +168,13 @@ export const handleUserSignIn = async (
       ...cookieOptions,
     });
 
-    res.setHeader(
-      "Set-Cookie",
-      `accessToken=${authToken}; Max-Age=${8 * 24 * 60 * 60 * 1000}; Path=${
-        cookieOptions.path
-      }; SameSite=${cookieOptions.sameSite}`
-    );
+    res.cookie("accessToken", authToken, {
+      httpOnly: false,
+      secure: true,
+      sameSite: isProduction ? ("none" as const) : ("lax" as const),
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
@@ -224,10 +224,6 @@ export const handleUserLogout = async (
         refreshToken: null,
       }
     );
-
-    //cookie config
-    dotenv.config({ path: "./.env" });
-
     //clear the cookies
     if (!user) {
       res.clearCookie("accessToken");
