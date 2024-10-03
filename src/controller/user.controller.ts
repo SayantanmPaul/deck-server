@@ -157,7 +157,7 @@ export const handleUserSignIn = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      secure: process.env.NODE_ENV === "production",
+      // secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
       path: '/'
@@ -165,9 +165,11 @@ export const handleUserSignIn = async (
 
     res.cookie("refreshToken", user.refreshToken, {
       httpOnly: true,
-      ...cookieOptions
+      secure: true,
+      ...cookieOptions,
     });
     res.cookie("accessToken", authToken, {
+      secure: false,
       ...cookieOptions,
     });
 
@@ -224,7 +226,7 @@ export const handleUserLogout = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      secure: process.env.NODE_ENV === "production",
+      // secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite:
         process.env.NODE_ENV === "production"
@@ -235,8 +237,12 @@ export const handleUserLogout = async (
 
     //clear the cookies
     if (!user) {
-      res.clearCookie("accessToken", { ...cookieOptions });
-      res.clearCookie("refreshToken", { ...cookieOptions, httpOnly: true });
+      res.clearCookie("accessToken", { ...cookieOptions, secure: true });
+      res.clearCookie("refreshToken", {
+        ...cookieOptions,
+        httpOnly: true,
+        secure: false,
+      });
       return res.sendStatus(204);
     }
 

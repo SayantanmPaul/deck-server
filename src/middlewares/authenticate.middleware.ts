@@ -60,7 +60,7 @@ export const authenticateToken = async (
               dotenv.config({ path: "./.env" });
 
               const cookieOptions = {
-                secure: process.env.NODE_ENV === "production",
+                secure: false,
                 maxAge: 8 * 24 * 60 * 60 * 1000,
                 sameSite:
                   process.env.NODE_ENV === "production"
