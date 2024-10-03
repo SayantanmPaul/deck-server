@@ -94,7 +94,6 @@ export const handleUserSignUp = async (
 
     return res.status(200).json({
       message: "User created successfully",
-      user: user,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -167,16 +166,22 @@ export const handleUserSignIn = async (
     return res.status(200).json({
       message: `Welcome ${user.firstName}`,
       currentUser: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        bio: user.bio,
-        avatar: user.avatar,
-        userName: user.userName
+        _id: user?._id,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        email: user?.email,
+        bio: user?.bio,
+        avatar: user?.avatar,
+        userName: user?.userName,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+        friends: user?.friends,
+        incomingFriendRequests: user?.incomingFriendRequests,
+        sentFriendRequests: user?.sentFriendRequests,
       },
       accessToken: authToken,
-      refreshToken: refreshToken,
+      // refreshToken: refreshToken,
+      //frontend should not access the refresh token
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
