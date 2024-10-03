@@ -160,7 +160,6 @@ export const handleUserSignIn = async (
       // secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
-      path: '/'
     };
 
     res.cookie("refreshToken", user.refreshToken, {
@@ -232,16 +231,15 @@ export const handleUserLogout = async (
         process.env.NODE_ENV === "production"
           ? ("none" as "none")
           : ("lax" as "lax"),
-      path: "/",
     };
 
     //clear the cookies
     if (!user) {
-      res.clearCookie("accessToken", { ...cookieOptions, secure: true });
+      res.clearCookie("accessToken", { ...cookieOptions, secure: false });
       res.clearCookie("refreshToken", {
         ...cookieOptions,
         httpOnly: true,
-        secure: false,
+        secure: true,
       });
       return res.sendStatus(204);
     }
