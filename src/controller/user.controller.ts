@@ -167,9 +167,18 @@ export const handleUserSignIn = async (
 
     res.cookie("refreshToken", user.refreshToken, {
       ...cookieOptions,
+    });
+
+    res.cookie("accessToken", authToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? ("none" as const)
+          : ("lax" as const),
+      path: "/",
       maxAge: 8 * 24 * 60 * 60 * 1000,
     });
-    res.cookie("accessToken", authToken, cookieOptions);
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
@@ -223,23 +232,10 @@ export const handleUserLogout = async (
     //cookie config
     dotenv.config({ path: "./.env" });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? ("none" as const)
-          : ("lax" as const),
-      path: "/",
-    };
-
     //clear the cookies
     if (!user) {
-      res.clearCookie("accessToken", {
-        ...cookieOptions,
-        maxAge: 8 * 24 * 60 * 60 * 1000,
-      });
-      res.clearCookie("refreshToken", cookieOptions);
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
       return res.sendStatus(204);
     }
 
@@ -257,8 +253,8 @@ export const handleUserLogout = async (
 
     await user.save();
 
-    res.clearCookie("accessToken", { ...cookieOptions });
-    res.clearCookie("refreshToken", { ...cookieOptions });
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
 
     return res.status(200).json({
       message: "user logged out successfully",
