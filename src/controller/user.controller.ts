@@ -157,23 +157,19 @@ export const handleUserSignIn = async (
 
     const isProduction = process.env.NODE_ENV === "production";
 
-    const cookieOptions = {
+    res.cookie("refreshToken", user.refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? ("none" as const) : ("lax" as const),
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
-    };
-
-    res.cookie("refreshToken", user.refreshToken, {
-      ...cookieOptions,
     });
 
     res.cookie("accessToken", authToken, {
-      httpOnly: false,
-      secure: true,
-      sameSite: isProduction ? ("none" as const) : ("lax" as const),
+      httpOnly: false, 
+      secure: true, 
+      sameSite: isProduction ? "none" : "lax", 
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
     //also send the user details and the tokens to the client
