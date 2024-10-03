@@ -168,7 +168,6 @@ export const handleUserSignIn = async (
       ...cookieOptions
     });
     res.cookie("accessToken", authToken, {
-      httpOnly: false,
       ...cookieOptions,
     });
 
@@ -225,7 +224,6 @@ export const handleUserLogout = async (
     dotenv.config({ path: "./.env" });
 
     const cookieOptions = {
-      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite:
@@ -238,7 +236,7 @@ export const handleUserLogout = async (
     //clear the cookies
     if (!user) {
       res.clearCookie("accessToken", { ...cookieOptions });
-      res.clearCookie("refreshToken", { ...cookieOptions });
+      res.clearCookie("refreshToken", { ...cookieOptions, httpOnly: true });
       return res.sendStatus(204);
     }
 
