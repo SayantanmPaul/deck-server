@@ -3,6 +3,7 @@ import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import UserModel from "../models/user.model";
 import { redis } from "../lib/redis";
 import { generateAccessToken } from "../controller/user.controller";
+import dotenv from 'dotenv';
 
 //Middleware to authenticate JWT token
 export const authenticateToken = async (
@@ -56,11 +57,16 @@ export const authenticateToken = async (
                 return res.status(403).json({ error: "User not found" });
               }
 
+              dotenv.config({ path: "./.env" });
+
               const cookieOptions = {
                 httpOnly: true,
-                secure: true,
-                maxAge: 60 * 60 * 1000,
-                sameSite: false,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 8 * 24 * 60 * 60 * 1000,
+                sameSite:
+                  process.env.NODE_ENV === "production"
+                    ? ("none" as "none")
+                    : ("lax" as "lax"),
               };
 
               const newAccessToken = generateAccessToken(_id);

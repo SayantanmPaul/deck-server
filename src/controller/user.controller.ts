@@ -6,6 +6,7 @@ import { redis } from "../lib/redis";
 import { LoginInFormSchema, SignUpFormSchema } from "../schema/validations";
 import { z } from "zod";
 import { generateUsername } from 'unique-username-generator'
+import dotenv from 'dotenv';
 
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
@@ -48,7 +49,7 @@ export const handleRefreshToken = (req: Request, res: Response) => {
   );
 };
 
-// basic user signip fn
+// basic user signup fn
 export const handleUserSignUp = async (
   req: Request,
   res: Response,
@@ -152,11 +153,13 @@ export const handleUserSignIn = async (
     mongoUser.refreshToken = refreshToken;
     await mongoUser.save();
 
+    dotenv.config({ path: "./.env" });
+
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
-      sameSite: false,
+      sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
     };
 
     res.cookie("accessToken", authToken, cookieOptions);
@@ -212,10 +215,16 @@ export const handleUserLogout = async (
     );
 
     //cookie config
+    dotenv.config({ path: "./.env" });
+
     const cookieOptions = {
       httpOnly: true,
-      secure: true,
-      sameSite: "none" as "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 8 * 24 * 60 * 60 * 1000,
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? ("none" as "none")
+          : ("lax" as "lax"),
     };
 
     //clear the cookies
