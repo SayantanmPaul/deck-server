@@ -7,6 +7,7 @@ import { LoginInFormSchema, SignUpFormSchema } from "../schema/validations";
 import { z } from "zod";
 import { generateUsername } from 'unique-username-generator'
 import dotenv from 'dotenv';
+import path from "path";
 
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
@@ -160,10 +161,11 @@ export const handleUserSignIn = async (
       secure: process.env.NODE_ENV === "production",
       maxAge: 8 * 24 * 60 * 60 * 1000,
       sameSite: process.env.NODE_ENV === "production" ? "none" as "none" : "lax" as "lax",
+      path: '/'
     };
 
-    res.cookie("accessToken", authToken, cookieOptions);
     res.cookie("refreshToken", user.refreshToken, cookieOptions);
+    res.cookie("accessToken", authToken, cookieOptions);
 
     //also send the user details and the tokens to the client
     return res.status(200).json({
@@ -225,6 +227,7 @@ export const handleUserLogout = async (
         process.env.NODE_ENV === "production"
           ? ("none" as "none")
           : ("lax" as "lax"),
+      path: "/",
     };
 
     //clear the cookies

@@ -67,6 +67,7 @@ export const authenticateToken = async (
                   process.env.NODE_ENV === "production"
                     ? ("none" as "none")
                     : ("lax" as "lax"),
+                path: "/",
               };
 
               const newAccessToken = generateAccessToken(_id);
