@@ -19,6 +19,7 @@ import {
   getConversationsMessages,
   sendMessageToPartner,
 } from "../controller/conversations.controller";
+import upload from "../middlewares/multer.middleware";
 
 export const userRouter = express.Router();
 
@@ -62,6 +63,7 @@ userRouter.get(
 
 userRouter.post(
   "/user/conversation/send",
+  upload,
   authenticateToken,
   sendMessageToPartner
 );
@@ -71,4 +73,8 @@ userRouter.get(
   authenticateToken,
   getConversationsMessages
 );
+
+// userRouter.post(
+//   "/user/conversation/upload-content",
+//   authenticateToken, upload.single("file"), uploadContentToCloudinary)
 // userRouter.get('/', )

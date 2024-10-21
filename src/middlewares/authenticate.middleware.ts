@@ -5,6 +5,8 @@ import { redis } from "../lib/redis";
 import { generateAccessToken } from "../controller/user.controller";
 import dotenv from 'dotenv';
 
+dotenv.config({ path: "./.env" });
+
 //Middleware to authenticate JWT token
 export const authenticateToken = async (
   req: Request,
@@ -57,12 +59,11 @@ export const authenticateToken = async (
                 return res.status(403).json({ error: "User not found" });
               }
 
-              dotenv.config({ path: "./.env" });
 
               const cookieOptions = {
                 httpOnly: false,
                 secure: true,
-                maxAge: 8 * 24 * 60 * 60 * 1000,
+                maxAge: 30 * 1000,
                 sameSite:
                   process.env.NODE_ENV === "production"
                     ? ("none" as const)
@@ -71,13 +72,24 @@ export const authenticateToken = async (
               };
 
               const newAccessToken = generateAccessToken(_id);
-              res.cookie("accessToken", newAccessToken, cookieOptions);
 
-              res.setHeader(
-                "Set-Cookie",
-                `accessToken=${newAccessToken}; Max-Age=${cookieOptions.maxAge}; Path=${cookieOptions.path}; SameSite=${cookieOptions.sameSite}`
-              );
-
+              try {
+                res.cookie("accessToken", newAccessToken, {
+                  httpOnly: true,
+                  secure: true,
+                  sameSite:
+                    process.env.NODE_ENV === "production"
+                      ? ("none" as const)
+                      : ("lax" as const),
+                  path: "/",
+                  maxAge: 30 * 1000,
+                });
+                console.log("successfully change accssstoken");
+                
+              } catch (error) {
+                console.log(error);
+                
+              }
               req.body.user = user;
               return next();
             }

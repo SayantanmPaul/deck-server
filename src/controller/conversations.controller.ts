@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { redis } from "../lib/redis";
-import UserModel from "../models/user.model";
 import {
   Message,
   MessageArraySchema,
@@ -11,6 +10,8 @@ import ConversationModel from "../models/conversation.model";
 import MessageModel from "../models/messsage.model";
 import { nanoid } from "nanoid";
 import { pusherServer, toPusherKey } from "../lib/pusher";
+import { uploadContentToCloudinary } from "../lib/cloudinary";
+import { UploadApiResponse } from "cloudinary";
 
 export const getConversationsMessages = async (
   req: Request,
@@ -87,6 +88,8 @@ export const sendMessageToPartner = async (
 ) => {
   try {
     const body = req.body;
+    const file = req.file;
+    const user = req.body.user;
 
     const { conversationId, textMessage } = z
       .object({
@@ -97,8 +100,6 @@ export const sendMessageToPartner = async (
 
     //1. split conversation to get the userIds
     const [userId1, userId2] = conversationId.split("--");
-
-    const user = req.body.user;
 
     if (String(user._id) !== userId1 && String(user._id) !== userId2) {
       return res.status(401).json({ error: "unauthorized" });
@@ -123,18 +124,31 @@ export const sendMessageToPartner = async (
     //4. all check clear and send the message
 
     const timeStamp = Date.now();
+    let contentUrl: string | null = null;
+    let contentType: string | null = null;
+    let contentFileName: string | null = null;
+
+    if (file) {
+      const uploadUrl: UploadApiResponse = await uploadContentToCloudinary(
+        file.buffer
+      );
+      contentUrl = uploadUrl.secure_url as string;
+      contentType = `${uploadUrl.resource_type}/${uploadUrl.format}`;
+      contentFileName= file.originalname;
+    }
 
     const messageData: Message = {
       _id: nanoid(),
       senderId: String(user._id),
       text: textMessage,
       timeStamp: timeStamp,
+      contentUrl: contentUrl,
+      contentType: contentType,
+      contentFileName: contentFileName,
     };
 
     const message = MessageSchema.parse(messageData);
 
-    // console.log("pusher 1");
-    
     //notift all connected chat room clients
     const channel = toPusherKey(`conversation:${conversationId}`);
     await pusherServer.trigger(channel, "incoming_message", message);
@@ -150,8 +164,6 @@ export const sendMessageToPartner = async (
         senderUserName: parsedSender.userName,
       }
     );
-
-    // console.log("pusher 2");
 
     //5. store the message in sorted set
     await redis.zadd(

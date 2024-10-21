@@ -13,7 +13,7 @@ dotenv.config({ path: "./.env" });
 // generate an access token for the user
 export const generateAccessToken = (_id: string) => {
   return jwt.sign({ _id }, process.env.JWT_SECRET as string, {
-    expiresIn: "1h",
+    expiresIn: "8d",
   });
 };
 
@@ -146,9 +146,6 @@ export const handleUserSignIn = async (
     const refreshToken = jwt.sign(
       { _id: user._id },
       process.env.REFRESH_TOKEN_SECRET as string,
-      {
-        expiresIn: "7d",
-      }
     );
     const mongoUser = UserModel.hydrate(user);
 
@@ -169,7 +166,7 @@ export const handleUserSignIn = async (
       secure: true, 
       sameSite: isProduction ? "none" : "lax", 
       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      maxAge: 8* 80 * 60 * 60 * 1000, //
     });
 
     //also send the user details and the tokens to the client
