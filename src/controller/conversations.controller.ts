@@ -1,17 +1,15 @@
+import { UploadApiResponse } from "cloudinary";
 import { NextFunction, Request, Response } from "express";
+import { nanoid } from "nanoid";
 import { z } from "zod";
+import { uploadContentToCloudinary } from "../lib/cloudinary";
+import { pusherServer, toPusherKey } from "../lib/pusher";
 import { redis } from "../lib/redis";
 import {
   Message,
   MessageArraySchema,
   MessageSchema,
 } from "../schema/validations";
-import ConversationModel from "../models/conversation.model";
-import MessageModel from "../models/messsage.model";
-import { nanoid } from "nanoid";
-import { pusherServer, toPusherKey } from "../lib/pusher";
-import { uploadContentToCloudinary } from "../lib/cloudinary";
-import { UploadApiResponse } from "cloudinary";
 
 export const getConversationsMessages = async (
   req: Request,
@@ -122,7 +120,6 @@ export const sendMessageToPartner = async (
     const parsedSender = JSON.parse(sender);
 
     //4. all check clear and send the message
-
     const timeStamp = Date.now();
     let contentUrl: string | null = null;
     let contentType: string | null = null;
@@ -171,34 +168,7 @@ export const sendMessageToPartner = async (
       timeStamp,
       JSON.stringify(message)
     );
-
-    //6. Check if the conversation exists in MongoDB otherwise crease one
-    let conversation = await ConversationModel.findOne({
-      participates: {
-        $all: [user._id, frindId],
-      },
-    });
-
-    if (!conversation) {
-      conversation = new ConversationModel({
-        participants: [userId1, userId2],
-        messages: [],
-      });
-    }
-
-    //7. Create and save the message in MongoDB
-    const newMessage = new MessageModel({
-      senderId: String(user._id),
-      text: textMessage,
-      timeStamp: timeStamp,
-    });
-
-    await newMessage.save();
-
-    //8. Add the new message to the conversation's messages
-    conversation.messages.push(newMessage._id);
-    await conversation.save();
-
+    
     return res.sendStatus(200);
   } catch (error) {
     if (error instanceof Error) {
