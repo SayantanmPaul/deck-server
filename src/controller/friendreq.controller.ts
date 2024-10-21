@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
+import { pusherServer, toPusherKey } from "../lib/pusher";
 import { redis } from "../lib/redis";
 import UserModel from "../models/user.model";
-import ConversationModel from "../models/conversation.model";
-import { pusherServer, toPusherKey } from "../lib/pusher";
 
 export const handleSendFriendRequest = async (
   req: Request,
@@ -237,13 +236,6 @@ export const acceptIncomingFriendRequest = async (
         $push: { friends: currentUserId },
       }),
     ]);
-
-    const conversation = new ConversationModel({
-      participates: [currentUserId, senderId],
-      timestamp: new Date(),
-    });
-
-    await conversation.save();
 
     return res.status(200).json({ message: `friend request accepted` });
   } catch (error) {
